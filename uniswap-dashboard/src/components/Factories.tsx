@@ -3,21 +3,6 @@
 import { useEffect, useState } from 'react';
 import { getFactory } from '@/lib/subgraph-service';
 
-const QUERY = `
-  {
-    factories(first: 5) {
-      id
-      poolCount
-      txCount
-      totalVolumeUSD
-    }
-    bundles(first: 5) {
-      id
-      ethPriceUSD
-    }
-  }
-`;
-
 export default function Factories() {
     const [data, setData] = useState<any>(null);
     const [err, setErr] = useState<string | null>(null);
@@ -28,7 +13,7 @@ export default function Factories() {
         setErr(null);
 
         try {
-            const result = await getFactory(QUERY);
+            const result = await getFactory();
             setData(result);
         } catch (e: any) {
             setErr(e.message);

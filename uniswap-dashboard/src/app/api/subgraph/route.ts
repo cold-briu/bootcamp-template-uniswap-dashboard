@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
         const { query } = await req.json();
 
         // Make request to subgraph
-        const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV';
+        const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/subgraphs/id/ESdrTJ3twMwWVoQ1hUE2u7PugEHX3QkenudD6aXCkDQ4';
 
         const response = await fetch(SUBGRAPH_URL, {
             method: 'POST',

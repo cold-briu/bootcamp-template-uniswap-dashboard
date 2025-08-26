@@ -81,10 +81,10 @@ Set up your Next.js project with TypeScript and Tailwind CSS, then clean up the 
 Implement the core dashboard functionality by integrating with the Uniswap v3 subgraph to display real-time DeFi data.
 
 ### 3.1. Get the Uniswap V3 subgraph query URL
-   - Navigate to [The Graph Explorer - Uniswap V3 Subgraph](https://thegraph.com/explorer/subgraphs/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV)
+   - Navigate to [The Graph Explorer - Uniswap V3 Subgraph](https://thegraph.com/explorer/subgraphs/ESdrTJ3twMwWVoQ1hUE2u7PugEHX3QkenudD6aXCkDQ4)
    - Locate the "Query URL" section on the subgraph page
-   - Copy the query endpoint: `/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`
-   - The full query URL will be: `https://gateway.thegraph.com/api/[api-key]/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`
+   - Copy the query endpoint: `/subgraphs/id/ESdrTJ3twMwWVoQ1hUE2u7PugEHX3QkenudD6aXCkDQ4`
+   - The full query URL will be: `https://gateway.thegraph.com/api/[api-key]/subgraphs/id/ESdrTJ3twMwWVoQ1hUE2u7PugEHX3QkenudD6aXCkDQ4`
        - Replace `[api-key]` with your API key obtained from step 1.1
 
 > 💡 **Note**: This Uniswap V3 subgraph (v0.0.3) provides access to mainnet data including pools, positions, swaps, and liquidity information.
@@ -146,7 +146,7 @@ const { query } = await req.json();
 Set up the subgraph URL and make the request to The Graph.
 
 ```typescript
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/subgraphs/id/ESdrTJ3twMwWVoQ1hUE2u7PugEHX3QkenudD6aXCkDQ4';
 
 const response = await fetch(SUBGRAPH_URL, {
   method: 'POST',
@@ -375,24 +375,39 @@ code ./src/lib/subgraph-service.ts
 
 **3.5.2.1. Create empty async await function**
 
-Create the basic function structure with async/await pattern.
+Create the basic function structure with async/await pattern and define the query within the service.
 
 ```typescript
-export async function getFactory(query: string) {
+const QUERY = `
+  {
+    factories(first: 5) {
+      id
+      poolCount
+      txCount
+      totalVolumeUSD
+    }
+    bundles(first: 5) {
+      id
+      ethPriceUSD
+    }
+  }
+`;
+
+export async function getFactory() {
   // Function implementation will go here
 }
 ```
 
 **3.5.2.2. Add fetch and parse data**
 
-Implement the fetch request and JSON parsing logic.
+Implement the fetch request and JSON parsing logic using the defined query.
 
 ```typescript
-export async function getFactory(query: string) {
+export async function getFactory() {
   const res = await fetch('/api/subgraph', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables: {}, operationName: 'Subgraphs' }),
+    body: JSON.stringify({ query: QUERY }),
   });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   const json = await res.json();
@@ -405,12 +420,12 @@ export async function getFactory(query: string) {
 Wrap the function in try-catch block to handle any errors that occur.
 
 ```typescript
-export async function getFactory(query: string) {
+export async function getFactory() {
   try {
     const res = await fetch('/api/subgraph', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query: QUERY }),
     });
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     const json = await res.json();
@@ -454,7 +469,7 @@ const fetchData = async () => {
   setErr(null);
   
   try {
-    const result = await getFactory(QUERY);
+    const result = await getFactory();
     setData(result);
   } catch (e: any) {
     setErr(e.message);
