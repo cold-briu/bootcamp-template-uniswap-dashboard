@@ -247,62 +247,17 @@ export default function Factories() {
 }
 ```
 
-**3.4.5. Create query constant**
+**3.4.5. Create data fetching function**
 
-Define the GraphQL query to fetch factories and bundles data from the Uniswap subgraph.
-
-```typescript
-const QUERY = `
-  {
-    factories(first: 5) {
-      id
-      poolCount
-      txCount
-      totalVolumeUSD
-    }
-    bundles(first: 5) {
-      id
-      ethPriceUSD
-    }
-  }
-`;
-```
-
-**3.4.6. Create query API function**
-
-**3.4.6.1. Set up async function with loading state**
-
-Create an async function to handle the API request and set loading state.
+Create a placeholder fetchData function that will be implemented later using the service layer.
 
 ```typescript
 const fetchData = async () => {
-  setIsLoading(true);
-  setErr(null);
+  // This will be implemented in section 3.6 using the service layer
 };
 ```
 
-**3.4.6.2. Make API request with try-catch**
-
-Implement the fetch request to your subgraph API endpoint.
-
-```typescript
-try {
-  const res = await fetch('/api/subgraph', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query: QUERY, variables: {}, operationName: 'Subgraphs' }),
-  });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  const json = await res.json();
-  setData(json.data);
-} catch (e: any) {
-  setErr(e.message);
-} finally {
-  setIsLoading(false);
-}
-```
-
-**3.4.6.3. Add useEffect to trigger data fetch**
+**3.4.5.1. Add useEffect to trigger data fetch**
 
 Use useEffect to automatically fetch data when the component mounts.
 
@@ -312,9 +267,9 @@ useEffect(() => {
 }, []);
 ```
 
-**3.4.7. Add render logic**
+**3.4.6. Add render logic**
 
-**3.4.7.1. Handle error state**
+**3.4.6.1. Handle error state**
 
 Display error message if there's an error fetching data.
 
@@ -329,7 +284,7 @@ if (err) {
 }
 ```
 
-**3.4.7.2. Handle loading state**
+**3.4.6.2. Handle loading state**
 
 Show loading message while data is being fetched.
 
@@ -344,7 +299,7 @@ if (isLoading) {
 }
 ```
 
-**3.4.7.3. Handle data display**
+**3.4.6.3. Handle data display**
 
 Display the fetched data as formatted JSON when available.
 
@@ -591,6 +546,373 @@ Display ETH price from bundles data with proper formatting.
     ${Number(data.bundles[0]?.ethPriceUSD).toLocaleString(undefined, { maximumFractionDigits: 2 })}
   </p>
 </div>
+```
+
+---
+
+## 4. Pool Dashboard
+
+#### Context
+Create a second dashboard component that displays pool-specific data using the Messari subgraph to show detailed pool information.
+
+### 4.1. Create Messari API Route
+
+This component requires a Messari subgraph so another route is required.
+
+**4.1.1. Create route file**
+
+Create the API route file to handle Messari subgraph requests server-side.
+
+```bash
+code ./src/app/api/messari/route.ts
+```
+
+**4.1.2. Import responses**
+
+Import the necessary Next.js modules for handling API requests.
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+```
+
+**4.1.3. Create empty route export**
+
+Create the basic POST route handler structure.
+
+```typescript
+export async function POST(req: NextRequest) {
+  return new NextResponse();
+}
+```
+
+**4.1.4. Get query from request**
+
+Extract the GraphQL query from the request body.
+
+```typescript
+const { query } = await req.json();
+```
+
+**4.1.5. Make request to Messari subgraph**
+
+Set up the Messari subgraph URL and make the request to The Graph.
+
+```typescript
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/subgraphs/id/8cLf29KxAedWLVaEqjV8qKomdwwXQxjptBZFrqWNH5u2';
+
+const response = await fetch(SUBGRAPH_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.GRAPH_API_KEY!}`,
+  },
+  body: JSON.stringify({ query }),
+});
+```
+
+**4.1.6. Parse response as JSON and return**
+
+Parse the response from the subgraph and return it to the client.
+
+```typescript
+const data = await response.json();
+return NextResponse.json(data);
+```
+
+**4.1.7. Catch errors**
+
+Wrap the entire function in a try-catch block to handle any errors.
+
+```typescript
+try {
+  // ... previous code ...
+} catch (error) {
+  console.error('Error fetching Messari subgraph data:', error);
+  return NextResponse.json(
+    { error: 'Failed to fetch Messari subgraph data' },
+    { status: 500 }
+  );
+}
+```
+
+### 4.2. Create PoolDashboard Component
+
+**4.2.1. Create new PoolDashboard component file**
+
+Create a new React component file to display pool data.
+
+```bash
+code ./src/components/PoolDashboard.tsx
+```
+
+**4.2.2. Empty component that renders component name as h1**
+
+Create a basic component structure with a heading. Add the "use client" directive since this component will use React hooks.
+
+```typescript
+'use client';
+
+export default function PoolDashboard() {
+  return (
+    <div>
+      <h1>PoolDashboard</h1>
+    </div>
+  );
+}
+```
+
+**4.2.3. Import in page**
+
+Import and use the PoolDashboard component in your main page.
+
+```typescript
+import Factories from '@/components/Factories';
+import PoolDashboard from '@/components/PoolDashboard';
+
+export default function Home() {
+  return (
+    <main>
+      <Factories />
+      <PoolDashboard />
+    </main>
+  );
+}
+```
+
+**4.2.4. Update PoolDashboard component to add state handlers**
+
+Import React hooks and add state management for data, error, and loading states.
+
+```typescript
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export default function PoolDashboard() {
+  const [data, setData] = useState<any>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  return (
+    <div>
+      <h1>PoolDashboard</h1>
+    </div>
+  );
+}
+```
+
+**4.2.5. Create query constant**
+
+Define the GraphQL query to fetch pool data from the Messari subgraph.
+
+```typescript
+const QUERY = `
+  {
+    liquidityPool(id: "0x357596DD7a0EF5CB703C5AAe4dA01EDFf176aE95") {
+      name
+      inputTokenBalances
+      symbol
+      totalValueLockedUSD
+      id
+      cumulativeSwapCount
+    }
+  }
+`;
+```
+
+**4.2.6. Create data fetching function**
+
+Create a placeholder fetchData function that will be implemented later using the service layer.
+
+```typescript
+const fetchData = async () => {
+  // This will be implemented in section 4.4 using the service layer
+};
+```
+
+**4.2.6.1. Add useEffect to trigger data fetch**
+
+Use useEffect to automatically fetch data when the component mounts.
+
+```typescript
+useEffect(() => {
+  fetchData();
+}, []);
+```
+
+**4.2.7. Add render logic**
+
+**4.2.7.1. Handle error state**
+
+Display error message if there's an error fetching data.
+
+```typescript
+if (err) {
+  return (
+    <div>
+      <h1>PoolDashboard</h1>
+      <p>Error: {err}</p>
+    </div>
+  );
+}
+```
+
+**4.2.7.2. Handle loading state**
+
+Show loading message while data is being fetched.
+
+```typescript
+if (isLoading) {
+  return (
+    <div>
+      <h1>PoolDashboard</h1>
+      <p>Loading...</p>
+    </div>
+  );
+}
+```
+
+**4.2.7.3. Handle data display**
+
+Display the fetched data as formatted JSON when available.
+
+```typescript
+return (
+  <div>
+    <h1>PoolDashboard</h1>
+    {data && (
+      <pre>
+        <span>{JSON.stringify(data, null, 2)}</span>
+      </pre>
+    )}
+  </div>
+);
+```
+
+### 4.3. Create Pool Data Service
+
+**4.3.1. Add getPoolData function to subgraph service**
+
+Add a new function to handle pool data requests in the existing subgraph service file.
+
+```bash
+code ./src/lib/subgraph-service.ts
+```
+
+**4.3.2. Create getPoolData function**
+
+**4.3.2.1. Create empty async await function**
+
+Create the basic function structure with async/await pattern and define the pool query within the service.
+
+```typescript
+const POOL_QUERY = `
+  {
+    liquidityPool(id: "0x357596DD7a0EF5CB703C5AAe4dA01EDFf176aE95") {
+      name
+      inputTokenBalances
+      symbol
+      totalValueLockedUSD
+      id
+      cumulativeSwapCount
+    }
+  }
+`;
+
+export async function getPoolData() {
+  // Function implementation will go here
+}
+```
+
+**4.3.2.2. Add fetch and parse data**
+
+Implement the fetch request and JSON parsing logic using the defined pool query.
+
+```typescript
+export async function getPoolData() {
+  const res = await fetch('/api/messari', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: POOL_QUERY }),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const json = await res.json();
+  return json.data;
+}
+```
+
+**4.3.2.3. Handle error**
+
+Wrap the function in try-catch block to handle any errors that occur.
+
+```typescript
+export async function getPoolData() {
+  try {
+    const res = await fetch('/api/messari', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: POOL_QUERY }),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const json = await res.json();
+    return json.data;
+  } catch (e: any) {
+    throw new Error(e.message);
+  }
+}
+```
+
+### 4.4. Implement getPoolData Function
+
+**4.4.1. Import into component**
+
+Import the getPoolData service function into the PoolDashboard component.
+
+```typescript
+'use client';
+
+import { useEffect, useState } from 'react';
+import { getPoolData } from '@/lib/subgraph-service';
+```
+
+**4.4.2. Create empty fetchData function**
+
+Create a placeholder function for handling data fetching within the component.
+
+```typescript
+const fetchData = async () => {
+  // Data fetching logic will go here
+};
+```
+
+**4.4.3. Try catch and finally getPoolData and update loaders**
+
+Implement the fetchData function with proper loading states and error handling using the getPoolData service.
+
+```typescript
+const fetchData = async () => {
+  setIsLoading(true);
+  setErr(null);
+  
+  try {
+    const result = await getPoolData();
+    setData(result);
+  } catch (e: any) {
+    setErr(e.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
+
+**4.4.4. Implement fetchData in useEffect**
+
+Call the fetchData function when the component mounts using useEffect.
+
+```typescript
+useEffect(() => {
+  fetchData();
+}, []);
 ```
 
 ---
