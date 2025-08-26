@@ -1,3 +1,5 @@
+import Factories from '@/components/Factories';
+
 export default function Home() {
   return (
     <main className="min-h-screen p-8">
@@ -9,6 +11,7 @@ export default function Home() {
           Welcome to your Uniswap analytics dashboard
         </p>
       </div>
+      <Factories />
     </main>
   );
 }

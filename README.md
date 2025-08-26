@@ -60,7 +60,7 @@ Set up your Next.js project with TypeScript and Tailwind CSS, then clean up the 
    ```
    - Delete the default favicon and replace with your own (optional)
    - Remove unused CSS from `src/app/globals.css` (keep Tailwind imports)
-   - Clean up `src/app/layout.tsx` metadata to match your project
+   ```
 
 2.3. Verify your setup
    ```bash
@@ -73,8 +73,6 @@ Set up your Next.js project with TypeScript and Tailwind CSS, then clean up the 
 > ⚠️ **Note**: Make sure you have Node.js 18.17 or later installed before running these commands.
 
 
-
-
 ---
 
 ## 3. Dashboard Development
@@ -82,7 +80,7 @@ Set up your Next.js project with TypeScript and Tailwind CSS, then clean up the 
 #### Context
 Implement the core dashboard functionality by integrating with the Uniswap v3 subgraph to display real-time DeFi data.
 
-3.1. Get the Uniswap V3 subgraph query URL
+### 3.1. Get the Uniswap V3 subgraph query URL
    - Navigate to [The Graph Explorer - Uniswap V3 Subgraph](https://thegraph.com/explorer/subgraphs/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV)
    - Locate the "Query URL" section on the subgraph page
    - Copy the query endpoint: `/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`
@@ -91,7 +89,7 @@ Implement the core dashboard functionality by integrating with the Uniswap v3 su
 
 > 💡 **Note**: This Uniswap V3 subgraph (v0.0.3) provides access to mainnet data including pools, positions, swaps, and liquidity information.
 
-3.2. Set up environment variables
+### 3.2. Set up environment variables
 
    - Create an environment variables file:
    ```bash
@@ -107,417 +105,260 @@ Implement the core dashboard functionality by integrating with the Uniswap v3 su
 
 > ⚠️ **Security Note**: Never commit your actual API key to version control. Add `.env.local` to your `.gitignore` file.
 
----
+### 3.3. Create Subgraph API route
 
-3.3. Create GraphQL API service
+**3.3.1. Create route file**
 
-   - Install the required GraphQL client dependencies:
-   ```bash
-   npm install urql @urql/core
-   ```
-   
-   - Create the API service file `src/lib/graphql.ts` and build it step by step:
+Create the API route file to handle subgraph requests server-side.
 
-   **Step 1: Import the required dependencies**
-   ```typescript
-   // Import URQL components for GraphQL operations
-   import { createClient, gql } from "urql";
-   import { cacheExchange, fetchExchange } from "@urql/core";
-   ```
-   
-   **Step 2: Define the subgraph URL constant**
-   ```typescript
-   // Store the complete endpoint URL for the Uniswap V3 subgraph
-   export const SUBGRAPH_URL =
-     "https://gateway.thegraph.com/api/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV";
-   ```
-   
-   **Step 3: Create the authenticated GraphQL client**
-   ```typescript
-   // Initialize URQL client with authentication and caching
-   export const client = createClient({
-     url: SUBGRAPH_URL, // Where to send GraphQL queries
-     fetchOptions: () => ({
-       headers: { 
-         // Use Bearer token authentication with your API key
-         Authorization: `Bearer ${process.env.GRAPH_API_KEY ?? ""}` 
-       },
-     }),
-     exchanges: [cacheExchange, fetchExchange], // Enable caching and HTTP requests
-   });
-   ```
-   
-   **Step 4: Export the GraphQL template literal**
-   ```typescript
-   // Re-export gql for writing GraphQL queries in your components
-   export { gql };
-   ```
-   
-   **Complete file (`src/lib/graphql.ts`):**
-   ```typescript
-   import { createClient, gql } from "urql";
-   import { cacheExchange, fetchExchange } from "@urql/core";
+```bash
+code ./src/app/api/subgraph/route.ts
+```
 
-   export const SUBGRAPH_URL =
-     "https://gateway.thegraph.com/api/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV";
+**3.3.2. Import responses**
 
-   export const client = createClient({
-     url: SUBGRAPH_URL,
-     fetchOptions: () => ({
-       headers: { Authorization: `Bearer ${process.env.GRAPH_API_KEY ?? ""}` },
-     }),
-     exchanges: [cacheExchange, fetchExchange],
-   });
+Import the necessary Next.js modules for handling API requests.
 
-   export { gql };
-   ```
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+```
 
----
+**3.3.3. Create empty route export**
 
-3.4. Create GraphQL queries file
+Create the basic POST route handler structure.
 
-   Create a dedicated file to organize all your GraphQL queries for better maintainability.
+```typescript
+export async function POST(req: NextRequest) {
+  return new NextResponse();
+}
+```
 
-   3.4.1. Create the queries directory structure
-   ```bash
-   # Create directories for organizing GraphQL queries
-   mkdir -p src/lib/queries
-   ```
+**3.3.4. Get query from request**
 
-   3.4.2. Import the GraphQL utilities
-   
-   Create `src/lib/queries/network.ts` and import the required dependencies:
-   ```typescript
-   import { gql } from "@/lib/graphql";
-   ```
+Extract the GraphQL query from the request body.
 
-   3.4.3. Define the network KPI query
-   
-   Add the GraphQL query for fetching network statistics:
-   ```typescript
-   export const NETWORK_KPI_QUERY = gql`
-     query NetworkKPI {
-       # Latest day snapshot (most recent daily rollup)
-       current: uniswapDayDatas(
-         first: 1
-         orderBy: date
-         orderDirection: desc
-       ) {
-         date
-         tvlUSD
-         volumeUSD
-         feesUSD
-         txCount
-       }
+```typescript
+const { query } = await req.json();
+```
 
-       # Previous day (to compute deltas if you want)
-       prev: uniswapDayDatas(
-         skip: 1
-         first: 1
-         orderBy: date
-         orderDirection: desc
-       ) {
-         date
-         tvlUSD
-         volumeUSD
-         feesUSD
-         txCount
-       }
-     }
-   `;
-   ```
+**3.3.5. Make request to subgraph**
 
-   3.4.4. Complete queries file
-   
-   The complete `src/lib/queries/network.ts` file:
-   ```typescript
-   import { gql } from "@/lib/graphql";
+Set up the subgraph URL and make the request to The Graph.
 
-   export const NETWORK_KPI_QUERY = gql`
-     query NetworkKPI {
-       current: uniswapDayDatas(
-         first: 1
-         orderBy: date
-         orderDirection: desc
-       ) {
-         date
-         tvlUSD
-         volumeUSD
-         feesUSD
-         txCount
-       }
+```typescript
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV';
 
-       prev: uniswapDayDatas(
-         skip: 1
-         first: 1
-         orderBy: date
-         orderDirection: desc
-       ) {
-         date
-         tvlUSD
-         volumeUSD
-         feesUSD
-         txCount
-       }
-     }
-   `;
-   ```
+const response = await fetch(SUBGRAPH_URL, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.GRAPH_API_KEY!}`,
+  },
+  body: JSON.stringify({ query }),
+});
+```
 
----
+**3.3.6. Parse response as JSON and return**
 
-3.5. Create the useNetworkKPI hook
+Parse the response from the subgraph and return it to the client.
 
-   Create `src/hooks/useNetworkKPI.ts` and build a React hook that uses the query from step 3.4:
+```typescript
+const data = await response.json();
+return NextResponse.json(data);
+```
 
-   3.5.1. Import the required dependencies and query
-   ```typescript
-   import React from "react";
-   import { useQuery } from "urql";
-   import { client } from "@/lib/graphql";
-   import { NETWORK_KPI_QUERY } from "@/lib/queries/network";
-   ```
+**3.3.7. Catch errors**
 
-   3.5.2. Create the hook function and execute the query
-   ```typescript
-   export function useNetworkKPI() {
-     const [result] = useQuery({
-       query: NETWORK_KPI_QUERY, // Using the query from our queries file
-       context: { client }, // Use our configured URQL client
-     });
+Wrap the entire function in a try-catch block to handle any errors.
 
-     const { data, fetching, error } = result;
-   ```
+```typescript
+try {
+  // ... previous code ...
+} catch (error) {
+  console.error('Error fetching subgraph data:', error);
+  return NextResponse.json(
+    { error: 'Failed to fetch subgraph data' },
+    { status: 500 }
+  );
+}
+```
 
-   3.5.3. Process the raw data for easier consumption
-   ```typescript
-     // Transform the subgraph data into a structured format
-     const processedData = React.useMemo(() => {
-       if (!data?.current?.[0]) return null;
+### 3.4. Create Query Component
 
-       const current = data.current[0];
-       const prev = data.prev?.[0];
+**3.4.1. Create new Factory component file**
 
-       return {
-         tvl: {
-           value: parseFloat(current.tvlUSD),
-           label: "TVL (USD)",
-         },
-         volume24h: {
-           value: parseFloat(current.volumeUSD),
-           label: "24h Volume (USD)",
-         },
-         fees24h: {
-           value: parseFloat(current.feesUSD),
-           label: "24h Fees (USD)",
-         },
-         txCount24h: {
-           value: parseInt(current.txCount),
-           label: "24h Tx Count",
-         },
-         // Include previous day data for potential delta calculations
-         previousDay: prev ? {
-           tvl: parseFloat(prev.tvlUSD),
-           volume: parseFloat(prev.volumeUSD),
-           fees: parseFloat(prev.feesUSD),
-           txCount: parseInt(prev.txCount),
-         } : null,
-       };
-     }, [data]);
-   ```
+Create a new React component file to display Uniswap factory data.
 
-   3.5.4. Return the processed data and loading states
-   ```typescript
-     return {
-       data: processedData,
-       loading: fetching,
-       error,
-     };
-   }
-   ```
+```bash
+code ./src/components/Factories.tsx
+```
 
+**3.4.2. Empty component that renders component name as h1**
 
-> 💡 **Note**: This hook imports the `NETWORK_KPI_QUERY` from the queries file created in step 3.4, demonstrating proper code organization and reusability.
+Create a basic component structure with a heading. Add the "use client" directive since this component will use React hooks.
 
----
+```typescript
+'use client';
 
-3.6. Create formatting utilities
+export default function Factories() {
+  return (
+    <div>
+      <h1>Factories</h1>
+    </div>
+  );
+}
+```
 
-   Create helper functions to format the numerical data for better display in the dashboard.
+**3.4.3. Import in page**
 
-   3.6.1. Create the formatting utilities file
-   ```bash
-   # Create the lib/format.ts file
-   touch src/lib/format.ts
-   ```
+Import and use the Factories component in your main page.
 
-   3.6.2. Add currency formatting function
-   ```typescript
-   // lib/format.ts
-   export function fmtUSD(n: number) {
-     return new Intl.NumberFormat(undefined, { 
-       style: "currency", 
-       currency: "USD", 
-       maximumFractionDigits: 0 
-     }).format(n);
-   }
-   ```
+```typescript
+import Factories from '@/components/Factories';
 
-   3.6.3. Add number formatting function
-   ```typescript
-   export function fmtNum(n: number) {
-     return new Intl.NumberFormat(undefined, { 
-       maximumFractionDigits: 0 
-     }).format(n);
-   }
-   ```
+export default function Home() {
+  return (
+    <main>
+      <Factories />
+    </main>
+  );
+}
+```
 
-   3.6.4. Add percentage formatting function
-   ```typescript
-   export function fmtPct(n: number | null) {
-     if (n === null) return "—";
-     const sign = n >= 0 ? "+" : "";
-     return `${sign}${n.toFixed(1)}%`;
-   }
-   ```
+**3.4.4. Update Factories component to add state handlers**
 
-   **Complete formatting file (`src/lib/format.ts`):**
-   ```typescript
-   // lib/format.ts
-   export function fmtUSD(n: number) {
-     return new Intl.NumberFormat(undefined, { 
-       style: "currency", 
-       currency: "USD", 
-       maximumFractionDigits: 0 
-     }).format(n);
-   }
+Import React hooks and add state management for data, error, and loading states.
 
-   export function fmtNum(n: number) {
-     return new Intl.NumberFormat(undefined, { 
-       maximumFractionDigits: 0 
-     }).format(n);
-   }
+```typescript
+'use client';
 
-   export function fmtPct(n: number | null) {
-     if (n === null) return "—";
-     const sign = n >= 0 ? "+" : "";
-     return `${sign}${n.toFixed(1)}%`;
-   }
-   ```
+import { useEffect, useState } from 'react';
 
-> 💡 **Note**: These utilities use the browser's built-in `Intl.NumberFormat` API for consistent, localized number formatting across different regions.
+export default function Factories() {
+  const [data, setData] = useState<any>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  return (
+    <div>
+      <h1>Factories</h1>
+    </div>
+  );
+}
+```
+
+**3.4.5. Create query constant**
+
+Define the GraphQL query to fetch factories and bundles data from the Uniswap subgraph.
+
+```typescript
+const QUERY = `
+  {
+    factories(first: 5) {
+      id
+      poolCount
+      txCount
+      totalVolumeUSD
+    }
+    bundles(first: 5) {
+      id
+      ethPriceUSD
+    }
+  }
+`;
+```
+
+**3.4.6. Create query API function**
+
+**3.4.6.1. Set up async function with loading state**
+
+Create an async function to handle the API request and set loading state.
+
+```typescript
+const fetchData = async () => {
+  setIsLoading(true);
+  setErr(null);
+};
+```
+
+**3.4.6.2. Make API request with try-catch**
+
+Implement the fetch request to your subgraph API endpoint.
+
+```typescript
+try {
+  const res = await fetch('/api/subgraph', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: QUERY, variables: {}, operationName: 'Subgraphs' }),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const json = await res.json();
+  setData(json.data);
+} catch (e: any) {
+  setErr(e.message);
+} finally {
+  setIsLoading(false);
+}
+```
+
+**3.4.6.3. Add useEffect to trigger data fetch**
+
+Use useEffect to automatically fetch data when the component mounts.
+
+```typescript
+useEffect(() => {
+  fetchData();
+}, []);
+```
+
+**3.4.7. Add render logic**
+
+**3.4.7.1. Handle error state**
+
+Display error message if there's an error fetching data.
+
+```typescript
+if (err) {
+  return (
+    <div>
+      <h1>Factories</h1>
+      <p>Error: {err}</p>
+    </div>
+  );
+}
+```
+
+**3.4.7.2. Handle loading state**
+
+Show loading message while data is being fetched.
+
+```typescript
+if (isLoading) {
+  return (
+    <div>
+      <h1>Factories</h1>
+      <p>Loading...</p>
+    </div>
+  );
+}
+```
+
+**3.4.7.3. Handle data display**
+
+Display the fetched data as formatted JSON when available.
+
+```typescript
+return (
+  <div>
+    <h1>Factories</h1>
+    {data && (
+      <pre>
+        <span>{JSON.stringify(data, null, 2)}</span>
+      </pre>
+    )}
+  </div>
+);
+```
 
 ---
-
-3.7. Create the TopBarKPIs UI component
-
-   Build a React component that displays the network KPIs using the hook and formatting utilities from previous steps.
-
-   3.7.1. Create the components directory and file
-   ```bash
-   # Create the components directory
-   mkdir -p src/components
-   # Create the TopBarKPIs component file
-   touch src/components/TopBarKPIs.tsx
-   ```
-
-   3.7.2. Add imports and client directive
-   ```typescript
-   // components/TopBarKPIs.tsx
-   "use client";
-
-   import { useNetworkKPI } from "@/hooks/useNetworkKPI";
-   import { fmtNum, fmtPct, fmtUSD } from "@/lib/format";
-   ```
-
-   3.7.3. Create the StatCard component
-   ```typescript
-   function StatCard({
-     label,
-     value,
-     delta,
-   }: {
-     label: string;
-     value: string;
-     delta?: number | null;
-   }) {
-     const up = (delta ?? 0) >= 0;
-     return (
-       <div className="rounded-2xl border p-4 shadow-sm">
-         <div className="text-xs text-gray-500">{label}</div>
-         <div className="mt-1 text-xl font-semibold">{value}</div>
-         {delta !== undefined && (
-           <div className={`mt-1 text-sm ${up ? "text-green-600" : "text-red-600"}`}>
-             {fmtPct(delta)}
-           </div>
-         )}
-       </div>
-     );
-   }
-   ```
-
-   3.7.4. Create the main TopBarKPIs component
-   ```typescript
-   export default function TopBarKPIs() {
-     const { loading, error, data } = useNetworkKPI();
-
-     if (loading) return <div className="p-4">Loading KPIs…</div>;
-     if (error || !data) return <div className="p-4 text-red-600">Error: {error ?? "No data"}</div>;
-
-     return (
-       <div className="grid grid-cols-2 gap-4 p-4 md:grid-cols-4">
-         <StatCard label="TVL (USD)" value={fmtUSD(data.tvl.value)} />
-         <StatCard label="24h Volume (USD)" value={fmtUSD(data.volume24h.value)} />
-         <StatCard label="24h Fees (USD)" value={fmtUSD(data.fees24h.value)} />
-         <StatCard label="24h Tx Count" value={fmtNum(data.txCount24h.value)} />
-       </div>
-     );
-   }
-   ```
-
-   **Complete component file (`src/components/TopBarKPIs.tsx`):**
-   ```typescript
-   // components/TopBarKPIs.tsx
-   "use client";
-
-   import { useNetworkKPI } from "@/hooks/useNetworkKPI";
-   import { fmtNum, fmtPct, fmtUSD } from "@/lib/format";
-
-   function StatCard({
-     label,
-     value,
-     delta,
-   }: {
-     label: string;
-     value: string;
-     delta?: number | null;
-   }) {
-     const up = (delta ?? 0) >= 0;
-     return (
-       <div className="rounded-2xl border p-4 shadow-sm">
-         <div className="text-xs text-gray-500">{label}</div>
-         <div className="mt-1 text-xl font-semibold">{value}</div>
-         {delta !== undefined && (
-           <div className={`mt-1 text-sm ${up ? "text-green-600" : "text-red-600"}`}>
-             {fmtPct(delta)}
-           </div>
-         )}
-       </div>
-     );
-   }
-
-   export default function TopBarKPIs() {
-     const { loading, error, data } = useNetworkKPI();
-
-     if (loading) return <div className="p-4">Loading KPIs…</div>;
-     if (error || !data) return <div className="p-4 text-red-600">Error: {error ?? "No data"}</div>;
-
-     return (
-       <div className="grid grid-cols-2 gap-4 p-4 md:grid-cols-4">
-         <StatCard label="TVL (USD)" value={fmtUSD(data.tvl.value)} />
-         <StatCard label="24h Volume (USD)" value={fmtUSD(data.volume24h.value)} />
-         <StatCard label="24h Fees (USD)" value={fmtUSD(data.fees24h.value)} />
-         <StatCard label="24h Tx Count" value={fmtNum(data.txCount24h.value)} />
-       </div>
-     );
-   }
-   ```
