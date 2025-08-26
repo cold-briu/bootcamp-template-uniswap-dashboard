@@ -474,4 +474,108 @@ useEffect(() => {
 }, []);
 ```
 
+### 3.7. Create Factory Render Card
+
+**3.7.1. Add main container with background**
+
+Create a full-height light gray background with page padding.
+
+```typescript
+return (
+  <main className="min-h-screen bg-gray-100 p-6">
+    {/* Content will go here */}
+  </main>
+);
+```
+
+**3.7.2. Add outer card container**
+
+Create a centered card with white background, shadow, and rounded corners.
+
+```typescript
+<main className="min-h-screen bg-gray-100 p-6">
+  <div className="max-w-md mx-auto bg-white shadow-lg rounded-2xl p-6 border">
+    {/* Card content will go here */}
+  </div>
+</main>
+```
+
+**3.7.3. Add title heading**
+
+Create a bigger, bold heading with bottom margin.
+
+```typescript
+<div className="max-w-md mx-auto bg-white shadow-lg rounded-2xl p-6 border">
+  <h2 className="text-xl font-semibold mb-4">Factory Data</h2>
+  {/* Rest of content */}
+</div>
+```
+
+**3.7.4. Add content wrapper**
+
+Create a container with vertical spacing between sections.
+
+```typescript
+<h2 className="text-xl font-semibold mb-4">Factory Data</h2>
+<div className="space-y-3">
+  {/* Sections will go here */}
+</div>
+```
+
+**3.7.5. Add Factory ID block**
+
+Display factory ID with small, muted label text.
+
+```typescript
+<div className="space-y-3">
+  <div>
+    <label className="text-sm text-gray-500">Factory ID</label>
+    <p className="font-mono text-sm break-all">{data.factories[0]?.id}</p>
+  </div>
+</div>
+```
+
+**3.7.6. Add two-column stats grid**
+
+Create a grid layout for statistics with mini cards.
+
+```typescript
+<div className="grid grid-cols-2 gap-4">
+  <div className="p-3 bg-gray-50 rounded-lg text-center">
+    <p className="text-sm text-gray-500">Pool Count</p>
+    <p className="font-semibold">{data.factories[0]?.poolCount}</p>
+  </div>
+  <div className="p-3 bg-gray-50 rounded-lg text-center">
+    <p className="text-sm text-gray-500">TX Count</p>
+    <p className="font-semibold">{data.factories[0]?.txCount}</p>
+  </div>
+</div>
+```
+
+**3.7.7. Add Total Volume section**
+
+Format large decimal string using Number().toLocaleString() to add thousands separators and drop decimals.
+
+```typescript
+<div>
+  <label className="text-sm text-gray-500">Total Volume USD</label>
+  <p className="text-lg font-bold text-green-600">
+    ${Number(data.factories[0]?.totalVolumeUSD).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+  </p>
+</div>
+```
+
+**3.7.8. Add ETH Price section**
+
+Display ETH price from bundles data with proper formatting.
+
+```typescript
+<div>
+  <label className="text-sm text-gray-500">ETH Price</label>
+  <p className="text-lg font-bold text-blue-600">
+    ${Number(data.bundles[0]?.ethPriceUSD).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+  </p>
+</div>
+```
+
 ---
