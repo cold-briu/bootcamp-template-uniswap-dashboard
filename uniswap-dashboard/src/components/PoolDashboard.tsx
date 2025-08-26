@@ -3,24 +3,26 @@
 import { useEffect, useState } from 'react';
 import { getPoolData } from '@/lib/subgraph-service';
 
+
+
 export default function PoolDashboard() {
     const [data, setData] = useState<any>(null);
     const [err, setErr] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-      const fetchData = async () => {
-    setIsLoading(true);
-    setErr(null);
-    
-    try {
-      const result = await getPoolData();
-      setData(result);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const fetchData = async () => {
+        setIsLoading(true);
+        setErr(null);
+
+        try {
+            const result = await getPoolData();
+            setData(result);
+        } catch (e: any) {
+            setErr(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
         fetchData();
