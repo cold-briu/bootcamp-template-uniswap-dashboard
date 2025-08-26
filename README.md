@@ -361,4 +361,117 @@ return (
 );
 ```
 
+### 3.5. Create Query Factory Service
+
+**3.5.1. Create file src/lib/subgraph-service**
+
+Create a dedicated service file to handle subgraph API requests.
+
+```bash
+code ./src/lib/subgraph-service.ts
+```
+
+**3.5.2. Create getFactory function**
+
+**3.5.2.1. Create empty async await function**
+
+Create the basic function structure with async/await pattern.
+
+```typescript
+export async function getFactory(query: string) {
+  // Function implementation will go here
+}
+```
+
+**3.5.2.2. Add fetch and parse data**
+
+Implement the fetch request and JSON parsing logic.
+
+```typescript
+export async function getFactory(query: string) {
+  const res = await fetch('/api/subgraph', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables: {}, operationName: 'Subgraphs' }),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const json = await res.json();
+  return json.data;
+}
+```
+
+**3.5.2.3. Handle error**
+
+Wrap the function in try-catch block to handle any errors that occur.
+
+```typescript
+export async function getFactory(query: string) {
+  try {
+    const res = await fetch('/api/subgraph', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const json = await res.json();
+    return json.data;
+  } catch (e: any) {
+    throw new Error(e.message);
+  }
+}
+```
+
+### 3.6. Implement getFactory Function
+
+**3.6.1. Import into component**
+
+Import the getFactory service function into the Factories component.
+
+```typescript
+'use client';
+
+import { useEffect, useState } from 'react';
+import { getFactory } from '@/lib/subgraph-service';
+```
+
+**3.6.2. Create empty fetchData function**
+
+Create a placeholder function for handling data fetching within the component.
+
+```typescript
+const fetchData = async () => {
+  // Data fetching logic will go here
+};
+```
+
+**3.6.3. Try catch and finally getFactory and update loaders**
+
+Implement the fetchData function with proper loading states and error handling using the getFactory service.
+
+```typescript
+const fetchData = async () => {
+  setIsLoading(true);
+  setErr(null);
+  
+  try {
+    const result = await getFactory(QUERY);
+    setData(result);
+  } catch (e: any) {
+    setErr(e.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
+
+**3.6.4. Implement fetchData in useEffect**
+
+Call the fetchData function when the component mounts using useEffect.
+
+```typescript
+useEffect(() => {
+  fetchData();
+}, []);
+```
+
 ---

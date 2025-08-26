@@ -1,5 +1,7 @@
-'use client'
+'use client';
+
 import { useEffect, useState } from 'react';
+import { getFactory } from '@/lib/subgraph-service';
 
 const QUERY = `
   {
@@ -26,14 +28,8 @@ export default function Factories() {
         setErr(null);
 
         try {
-            const res = await fetch('/api/subgraph', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: QUERY, variables: {}, operationName: 'Subgraphs' }),
-            });
-            if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-            const json = await res.json();
-            setData(json.data);
+            const result = await getFactory(QUERY);
+            setData(result);
         } catch (e: any) {
             setErr(e.message);
         } finally {
