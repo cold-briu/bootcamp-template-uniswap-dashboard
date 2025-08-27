@@ -7,8 +7,26 @@ A beginner-friendly tutorial for building and deploying a Uniswap v3 dashboard u
 ## 📘 Table of Contents
 
 1. [Prerequisites](#prerequisites)
+   - 1.1. [Create Graph Studio Account](#context)
+   - 1.2. [Connect Wallet](#context)
+   - 1.3. [Add and Verify Email](#context)
+   - 1.4. [Get Uniswap V3 Subgraph Query URL](#context)
+
 2. [Project Initialization](#project-initialization)
+   - 2.1. [Create Next.js Application](#context)
+   - 2.2. [Clean Up Default Template](#context)
+   - 2.3. [Verify Setup](#context)
+
 3. [Pool Dashboard](#pool-dashboard)
+   - 3.1. [Create Subgraph API Route](#31-create-subgraph-api-route)
+   - 3.2. [Create PoolDashboard Component](#32-create-pooldashboard-component)
+   - 3.3. [Create Pool Data Service](#33-create-pool-data-service)
+   - 3.4. [Implement getPoolData Function](#34-implement-getpooldata-function)
+   - 3.5. [UI Implementation](#35-ui-implementation)
+     - 3.5.1. [Error UI](#351-error-ui)
+     - 3.5.2. [UI Loader](#352-ui-loader)
+     - 3.5.3. [No Data UI](#353-no-data-ui)
+     - 3.5.4. [Render UI](#354-render-ui)
 
 ---
 
