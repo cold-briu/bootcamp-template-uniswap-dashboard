@@ -362,7 +362,6 @@ const POOL_QUERY = `
       name
       inputTokenBalances
       symbol
-      totalValueLockedUSD
       id
       cumulativeSwapCount
     }
@@ -464,3 +463,205 @@ useEffect(() => {
   fetchData();
 }, []);
 ```
+
+### 3.5. UI Implementation
+
+#### Context
+Enhance the PoolDashboard component with proper UI styling and error handling to create a professional-looking dashboard with user-friendly error states.
+
+**3.5.1. Error UI**
+
+Implement a comprehensive error handling UI that provides clear feedback to users when data fetching fails.
+
+**3.5.1.1. Style the error state**
+
+Replace the basic error display with a styled error UI that includes visual indicators and user actions.
+
+```typescript
+if (err) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+      <h2 className="text-xl font-semibold text-red-700 mb-2">Error Loading Pool Data</h2>
+      <p className="text-red-600">{err}</p>
+      <button
+        onClick={fetchData}
+        className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+```
+
+**3.5.1.2. Add no data state**
+
+Handle cases where the API returns successfully but with no pool data available.
+
+```typescript
+if (!data || !data.liquidityPool) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+      <h2 className="text-xl font-semibold text-yellow-700 mb-2">No Pool Data Available</h2>
+      <p className="text-yellow-600">Unable to load pool information at this time.</p>
+      <button
+        onClick={fetchData}
+        className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+```
+
+> 💡 **Design Note**: The error UI uses Tailwind CSS classes to create a professional appearance with:
+> - Red border and colors for critical errors
+> - Yellow/amber colors for warning states (no data)
+> - Clear messaging and actionable retry buttons
+> - Consistent spacing and typography
+
+**3.5.2. UI Loader**
+
+Implement an elegant loading state with animated skeleton placeholders to provide visual feedback while data is being fetched.
+
+**3.5.2.1. Style the loading state**
+
+Replace the basic loading message with an animated skeleton loader that mimics the content structure.
+
+```typescript
+if (isLoading) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="animate-pulse">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Loading Pool Data...</h2>
+        <div className="space-y-3">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+> 💡 **Design Note**: The loading UI features:
+> - Animated pulse effect using Tailwind's `animate-pulse` class
+> - Skeleton placeholders with varying widths to simulate content
+> - Consistent styling with the main dashboard layout
+> - Clear loading message for accessibility
+
+**3.5.3. No Data UI**
+
+Implement a user-friendly no data state that handles cases where the API returns successfully but contains no pool information.
+
+**3.5.3.1. Style the no data state**
+
+Create a warning-style UI component that clearly communicates when pool data is unavailable and provides recovery options.
+
+```typescript
+if (!data || !data.liquidityPool) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+      <h2 className="text-xl font-semibold text-yellow-700 mb-2">No Pool Data Available</h2>
+      <p className="text-yellow-600">Unable to load pool information at this time.</p>
+      <button
+        onClick={fetchData}
+        className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+```
+
+> 💡 **Design Note**: The no data UI provides:
+> - Yellow/amber color scheme to indicate a warning state (not an error)
+> - Clear messaging explaining the situation to users
+> - Retry functionality to attempt data loading again
+> - Consistent styling with other UI states for cohesive user experience
+
+**3.5.4. Render UI**
+
+Implement the main dashboard UI that displays pool data in a professional, organized layout with clear visual hierarchy.
+
+**3.5.4.1. Create the main dashboard structure**
+
+Replace the JSON display with a structured dashboard layout that includes header, metrics, and content sections.
+
+```typescript
+const pool = data.liquidityPool;
+
+return (
+  <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    {/* Header */}
+    <div className="bg-blue-50 px-6 py-4 border-b">
+      <h2 className="text-2xl font-bold text-blue-900">{pool.name || 'Uniswap Pool'}</h2>
+      <p className="text-blue-700 text-sm mt-1">{pool.symbol || 'N/A'}</p>
+      <p className="text-blue-600 text-xs font-mono mt-2">
+        ID: {shortenAddress(pool.id)}
+      </p>
+    </div>
+
+    {/* Main Content */}
+    <div className="p-6">
+      {/* Key Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+          <h3 className="text-sm font-medium text-purple-700 mb-1">Cumulative Swaps</h3>
+          <p className="text-2xl font-bold text-purple-900">
+            {formatNumber(pool.cumulativeSwapCount || 0)}
+          </p>
+        </div>
+
+        <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+          <h3 className="text-sm font-medium text-indigo-700 mb-1">Pool ID</h3>
+          <p className="text-sm font-mono text-indigo-900 break-all">
+            {pool.id}
+          </p>
+        </div>
+      </div>
+
+      {/* Token Balances */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Token Balances</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Token 0 Balance</h4>
+            <p className="text-lg font-mono text-gray-900">
+              {formatTokenBalance(pool.inputTokenBalances?.[0] || '0', 0)}
+            </p>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Token 1 Balance</h4>
+            <p className="text-lg font-mono text-gray-900">
+              {formatTokenBalance(pool.inputTokenBalances?.[1] || '0', 1)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Refresh Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={fetchData}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Refreshing...' : 'Refresh Data'}
+        </button>
+      </div>
+    </div>
+  </div>
+);
+```
+
+> 💡 **Design Note**: The main dashboard UI features:
+> - Clean header section with pool name, symbol, and shortened ID
+> - Color-coded metric cards for different data types
+> - Responsive grid layout that adapts to different screen sizes
+> - Professional styling with consistent spacing and typography
+> - Interactive refresh button with loading states and accessibility features
